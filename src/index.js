@@ -6,6 +6,8 @@ import Bottombar from './component/bottombar';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
 import './index.less';
+import _cell from './core/cell'
+import { formulam } from './core/formula';
 
 
 class Spreadsheet {
@@ -85,6 +87,28 @@ class Spreadsheet {
 
   getData() {
     return this.datas.map(it => it.getData());
+  }
+
+  getSheet1DataRendered() {
+    const sheet1DataProxy = this.datas[0]
+    let data = JSON.parse(JSON.stringify(sheet1DataProxy.getData()))
+
+    const rowsKeys = Object.keys(data.rows).filter(k => !isNaN(+k))
+    rowsKeys.forEach(rowKey => {
+        const cellKeys = Object.keys(data.rows[rowKey].cells).filter(k => !isNaN(+k))
+        cellKeys.forEach(cellKey => {
+          let cell = data.rows[rowKey].cells[cellKey]
+          let cellText = cell.text || ''
+
+          // If a cell is a formula, we put the formula in .formula and result in .text
+          if (cellText[0] === '=') {
+            cell.text = _cell.render(cell.text || '', formulam, (y, x) => (sheet1DataProxy.getCellTextOrDefault(x,y)))
+            cell.formula = cellText
+          }
+        })
+    })
+    
+    return data
   }
 
   cellText(ri, ci, text, sheetIndex = 0) {
